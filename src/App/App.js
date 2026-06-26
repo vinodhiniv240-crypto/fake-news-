@@ -208,55 +208,23 @@ function analyzeWithClaude(newsText) {
 async function fetchRealNews() {
   try {
     const NEWS_API_KEY = process.env.REACT_APP_NEWS_API_KEY;
-
-    // Professional categories
-    const categories = [
-      "technology",
-      "business",
-      "health",
-      "science",
-      "sports",
-      "entertainment",
-      "world",
-      "politics",
-      "artificial intelligence",
-      "climate"
-    ];
-
-    // Pick a random category
-    const randomCategory =
-      categories[Math.floor(Math.random() * categories.length)];
-
-    const response = await axios.get(
-      `https://newsapi.org/v2/everything?q=${encodeURIComponent(
-        randomCategory
-      )}&language=en&sortBy=publishedAt&pageSize=30&apiKey=${NEWS_API_KEY}&_=${Date.now()}`
-    );
-
-    const articles = response.data.articles || [];
-
-    // Remove duplicate headlines
-    const uniqueArticles = articles.filter(
-      (article, index, self) =>
-        index ===
-        self.findIndex((a) => a.title === article.title)
-    );
-
-    // Shuffle articles for a fresh experience
-    uniqueArticles.sort(() => Math.random() - 0.5);
-
-    return uniqueArticles.map((article) => ({
+    console.log("News Key:", process.env.REACT_APP_NEWS_API_KEY);
+console.log("News URL:",
+`https://newsapi.org/v2/top-headlines?country=us&pageSize=10&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`);
+const response = await axios.get(
+  `https://newsapi.org/v2/top-headlines?country=us&pageSize=10&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`
+);
+  
+    return response.data.articles.map((article) => ({
       title: article.title || "No Title",
       source: article.source?.name || "Unknown",
-      category: randomCategory
-        .replace(/\b\w/g, (c) => c.toUpperCase()),
-      summary: article.description || "No description available.",
+      category: "General",
+      summary: article.description || "",
       url: article.url,
-      image: article.urlToImage,
       time: new Date(article.publishedAt).toLocaleString(),
     }));
   } catch (error) {
-    console.error("News API Error:", error);
+    console.error(error);
     return [];
   }
 }
