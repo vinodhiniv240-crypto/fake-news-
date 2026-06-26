@@ -105,8 +105,10 @@ function ProgressBar({ pct, color = BLUE }) {
 }
 
 // ─── Rule-Based Analysis (no API, no server, works instantly) ──────────────
-//function analyzeWithClaude(newsText)
- {
+// eslint-disable-next-line no-unused-vars
+
+function analyzeWithClaude(newsText){
+ 
   const text = newsText.toLowerCase();
 
   const fakeKeywords = [
