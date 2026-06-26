@@ -106,12 +106,9 @@ function ProgressBar({ pct, color = BLUE }) {
 
 // ─── Rule-Based Analysis (no API, no server, works instantly) ──────────────
 // eslint-disable-next-line no-unused-vars
-
 function analyzeWithClaude(newsText){
- 
-  const text = newsText.toLowerCase();
-
-  const fakeKeywords = [
+ const text = newsText.toLowerCase();
+ const fakeKeywords = [
     "shocking", "you won't believe", "miracle", "secret they don't want you to know",
     "doctors hate", "one weird trick", "mind blowing", "exposed", "hoax",
     "conspiracy", "illuminati", "deep state", "they're hiding", "banned",
