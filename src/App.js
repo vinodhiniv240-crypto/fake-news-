@@ -105,7 +105,7 @@ function ProgressBar({ pct, color = BLUE }) {
 }
 
 // ─── Rule-Based Analysis (no API, no server, works instantly) ──────────────
-function analyzeWithClaude(newsText) {
+//function analyzeWithClaude(newsText) {
   const text = newsText.toLowerCase();
 
   const fakeKeywords = [
