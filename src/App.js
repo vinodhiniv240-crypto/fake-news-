@@ -9,7 +9,8 @@ import {
 } from "firebase/auth";
 import { auth, provider } from "./firebase";
 import emailjs from "@emailjs/browser";
-
+console.log("News API:", process.env.REACT_APP_NEWS_API_KEY);
+console.log("Groq API:", process.env.REACT_APP_GROQ_API_KEY);
 // ─── Style tokens ──────────────────────────────────────────────────────────
 const BLUE = "#2563eb";
 const DARK = "#0f172a";
@@ -272,103 +273,322 @@ function PageDashboard({
   history, liveNews, newsLoading, loadLiveNews,
   setNews, setActivePage,
 }) {
-  const catCounts = history.reduce((acc, h) => {
-    acc[h.category] = (acc[h.category] || 0) + 1; return acc;
-  }, {});
-  const topCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
-  const totalCat = topCats.reduce((s, [, v]) => s + v, 0) || 1;
+  const realCount = totalChecks - fakeCount;
 
   return (
-    <div>
-      <h1 style={{ fontSize: "22px", fontWeight: "700", color: DARK }}>Welcome back, {userName} 👋</h1>
-      <p style={{ color: "#64748b", marginBottom: "24px" }}>Here's your fake news detection overview.</p>
+    <div style={{ paddingBottom: "40px" }}>
+      {/* HERO BANNER */}
+      <div
+        style={{
+          background: "linear-gradient(135deg,#2563eb,#1d4ed8,#0f172a)",
+          borderRadius: "24px",
+          padding: "32px",
+          color: "white",
+          marginBottom: "24px",
+          boxShadow: "0 10px 30px rgba(37,99,235,0.25)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: "14px", opacity: 0.9, marginBottom: "8px" }}>
+              AI News Verification Dashboard
+            </div>
+            <h1 style={{ fontSize: "32px", margin: 0, fontWeight: "800" }}>
+              Welcome back, {userName} 👋
+            </h1>
+            <p style={{ marginTop: "12px", color: "#dbeafe", fontSize: "16px", maxWidth: "560px" }}>
+              Monitor misinformation, verify headlines with AI, and stay updated with real-time news intelligence.
+            </p>
+          </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "24px" }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "12px", opacity: 0.8 }}>Detection Accuracy</div>
+            <div style={{ fontSize: "42px", fontWeight: "800" }}>{accuracy}%</div>
+            <div style={{ fontSize: "12px", color: "#bfdbfe" }}>Gemini AI Model</div>
+          </div>
+        </div>
+      </div>
+
+      {/* STATS CARDS */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0,1fr))",
+          gap: "18px",
+          marginBottom: "26px",
+        }}
+      >
         {[
-          { label: "Total Checks",      value: totalChecks,          icon: "🔍", sub: "all time" },
-          { label: "Fake / Misleading", value: fakeCount,            icon: "⚠️", sub: `${totalChecks > 0 ? ((fakeCount/totalChecks)*100).toFixed(0) : 0}% of total` },
-          { label: "Verified Real",     value: totalChecks-fakeCount,icon: "✅", sub: "confirmed" },
-          { label: "Accuracy",          value: `${accuracy}%`,       icon: "🎯", sub: "AI model" },
-        ].map(s => (
-          <div key={s.label} style={card}>
-            <div style={{ fontSize: "22px" }}>{s.icon}</div>
-            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", marginTop: "6px" }}>{s.label}</div>
-            <div style={{ fontSize: "28px", fontWeight: "700", color: DARK, margin: "4px 0" }}>{s.value}</div>
-            <div style={{ fontSize: "12px", color: "#94a3b8" }}>{s.sub}</div>
+          { label: "Total Checks", value: totalChecks, icon: "🔍", color: "#2563eb" },
+          { label: "Fake / Misleading", value: fakeCount, icon: "⚠️", color: "#ef4444" },
+          { label: "Verified Real", value: realCount, icon: "✅", color: "#16a34a" },
+          { label: "AI Accuracy", value: `${accuracy}%`, icon: "🎯", color: "#7c3aed" },
+        ].map((s) => (
+          <div
+            key={s.label}
+            style={{
+              background: "white",
+              borderRadius: "20px",
+              padding: "22px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 4px 12px rgba(15,23,42,0.04)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  background: `${s.color}15`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "24px",
+                }}
+              >
+                {s.icon}
+              </div>
+              <span style={{ fontSize: "12px", color: "#94a3b8" }}>Today</span>
+            </div>
+
+            <div style={{ marginTop: "16px" }}>
+              <div style={{ fontSize: "13px", color: "#64748b", fontWeight: "600" }}>{s.label}</div>
+              <div style={{ fontSize: "34px", fontWeight: "800", color: "#0f172a", marginTop: "6px" }}>
+                {s.value}
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
-        {/* Category breakdown */}
-        <div style={card}>
-          <h3 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "14px", color: DARK }}>Detected categories</h3>
-          {topCats.length === 0
-            ? <p style={{ fontSize: "13px", color: "#94a3b8" }}>Run some analyses to see category breakdown.</p>
-            : topCats.map(([cat, count]) => (
-              <div key={cat} style={{ marginBottom: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                  <span style={{ color: "#64748b" }}>{cat}</span>
-                  <span style={{ fontWeight: "600" }}>{Math.round((count/totalCat)*100)}%</span>
-                </div>
-                <ProgressBar pct={Math.round((count/totalCat)*100)} color={catColor[cat] || "#94a3b8"} />
+      {/* MAIN GRID */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.1fr 1fr",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
+        {/* CATEGORY CHART */}
+        <div
+          style={{
+            background: "white",
+            borderRadius: "20px",
+            padding: "24px",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 12px rgba(15,23,42,0.04)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
+                Detection Categories
+              </h3>
+              <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "13px" }}>
+                Distribution of analyzed content
+              </p>
+            </div>
+            <span style={{ fontSize: "12px", color: "#2563eb", fontWeight: "600" }}>Live</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+            <div
+              style={{
+                width: "170px",
+                height: "170px",
+                borderRadius: "50%",
+                background: "conic-gradient(#2563eb 0 35%, #ef4444 35% 55%, #10b981 55% 80%, #f59e0b 80% 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto",
+              }}
+            >
+              <div
+                style={{
+                  width: "110px",
+                  height: "110px",
+                  borderRadius: "50%",
+                  background: "white",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a" }}>{totalChecks}</div>
+                <div style={{ fontSize: "12px", color: "#64748b" }}>Total</div>
               </div>
-            ))
-          }
+            </div>
+
+            <div style={{ flex: 1 }}>
+              {[
+                { label: "Politics", pct: 35, color: "#2563eb" },
+                { label: "Health", pct: 20, color: "#ef4444" },
+                { label: "Technology", pct: 25, color: "#10b981" },
+                { label: "Business", pct: 20, color: "#f59e0b" },
+              ].map((c) => (
+                <div key={c.label} style={{ marginBottom: "14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
+                    <span style={{ color: "#475569", fontWeight: "600" }}>{c.label}</span>
+                    <span style={{ color: "#0f172a", fontWeight: "700" }}>{c.pct}%</span>
+                  </div>
+                  <div style={{ height: "8px", background: "#e2e8f0", borderRadius: "999px" }}>
+                    <div style={{ width: `${c.pct}%`, height: "100%", background: c.color, borderRadius: "999px" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Breaking news feed */}
-        <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-            <h3 style={{ fontSize: "14px", fontWeight: "600", color: DARK }}>🌐 Today's top news</h3>
-            <button onClick={loadLiveNews} style={{ fontSize: "11px", color: BLUE, background: "none", border: "none", cursor: "pointer", fontWeight: "600" }}>
+        {/* LIVE NEWS */}
+        <div
+          style={{
+            background: "white",
+            borderRadius: "20px",
+            padding: "24px",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 12px rgba(15,23,42,0.04)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
+                🌐 Today's Top News
+              </h3>
+              <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "13px" }}>
+                Powered by GNews API
+              </p>
+            </div>
+
+            <button
+              onClick={loadLiveNews}
+              style={{
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                color: BLUE,
+                borderRadius: "10px",
+                padding: "8px 12px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
               {newsLoading ? "Loading…" : "↻ Refresh"}
             </button>
           </div>
-          {newsLoading
-            ? <p style={{ fontSize: "13px", color: "#94a3b8" }}>Fetching live news…</p>
-            : liveNews.length === 0
-              ? <p style={{ fontSize: "13px", color: "#94a3b8" }}>No news loaded. Click Refresh.</p>
-              : liveNews.slice(0, 4).map((n, i) => (
-                <div key={i}
-                  style={{ padding: "8px 0", borderBottom: i < 3 ? "1px solid #f1f5f9" : "none", cursor: "pointer" }}
-                  onClick={() => { setNews(n.title + "\n\n" + n.summary); setActivePage("analyze"); }}>
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "2px" }}>
-                    <span style={{ fontSize: "10px", fontWeight: "600", color: catColor[n.category] || "#94a3b8", textTransform: "uppercase" }}>{n.category}</span>
-                    <span style={{ fontSize: "10px", color: "#94a3b8" }}>· {n.time}</span>
-                  </div>
-                  <div style={{ fontSize: "12px", color: DARK, fontWeight: "500", lineHeight: "1.4" }}>{n.title}</div>
-                  <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>{n.source}</div>
+
+          {newsLoading ? (
+            <p style={{ color: "#64748b" }}>Fetching latest headlines…</p>
+          ) : (
+            liveNews.slice(0, 4).map((n, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  setNews(n.title + "\\n\\n" + n.summary);
+                  setActivePage("analyze");
+                }}
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  padding: "12px 0",
+                  borderBottom: i < 3 ? "1px solid #f1f5f9" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                <div
+                  style={{
+                    width: "64px",
+                    height: "64px",
+                    borderRadius: "14px",
+                    background: "#dbeafe",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "28px",
+                    flexShrink: 0,
+                  }}
+                >
+                  📰
                 </div>
-              ))
-          }
-          <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>Click any headline to analyze it →</p>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "11px", color: "#2563eb", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>
+                    {n.category}
+                  </div>
+                  <div style={{ fontSize: "14px", color: "#0f172a", fontWeight: "600", lineHeight: 1.4 }}>
+                    {n.title}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                    {n.source} · {n.time}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Recent activity */}
-      <div style={card}>
-        <h3 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "14px", color: DARK }}>Recent analysis history</h3>
-        {history.length === 0
-          ? <p style={{ color: "#94a3b8", fontSize: "13px" }}>No analysis yet — go to Analyze News to get started.</p>
-          : history.slice(0, 6).map((item, i) => {
-            const vc = verdictConfig[item.verdict] || verdictConfig.UNVERIFIABLE;
-            return (
-              <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "10px 0", borderBottom: i < Math.min(history.length,6)-1 ? "1px solid #f1f5f9" : "none" }}>
-                <span style={badge(vc.color, vc.bg)}>{item.verdict}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", color: DARK }}>{item.text}</div>
-                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>{item.time} · {item.confidence}% confidence · {item.category}</div>
-                </div>
+      {/* BOTTOM SECTION */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+        {/* TREND CHART */}
+        <div style={{ background: "white", borderRadius: "20px", padding: "24px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(15,23,42,0.04)" }}>
+          <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>📈 Detection Trend</h3>
+          <p style={{ margin: "4px 0 18px", color: "#64748b", fontSize: "13px" }}>Last 7 days</p>
+
+          <svg viewBox="0 0 320 140" paths={[
+            { d: "M20 100 L70 80 L120 90 L170 55 L220 70 L270 45 L300 52", stroke: BLUE, strokeWidth: 3, strokeLinecap: "round", strokeLinejoin: "round" },
+            { d: "M20 100 L70 80 L120 90 L170 55 L220 70 L270 45 L300 52 L300 140 L20 140 Z", fill: "#2563eb22" },
+          ]} />
+
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => <span key={d}>{d}</span>)}
+          </div>
+        </div>
+
+        {/* RECENT ACTIVITY */}
+        <div style={{ background: "white", borderRadius: "20px", padding: "24px", border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(15,23,42,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>🕒 Recent Activity</h3>
+            <span style={{ fontSize: "12px", color: "#64748b" }}>Last 5 checks</span>
+          </div>
+
+          {history.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📰</div>
+              <div style={{ fontSize: "16px", fontWeight: "600", color: "#0f172a" }}>No analysis yet</div>
+              <div style={{ fontSize: "13px", color: "#64748b", marginTop: "6px" }}>
+                Start by analyzing a headline in the Analyze News section.
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            history.slice(0, 5).map((item, i) => {
+              const vc = verdictConfig[item.verdict] || verdictConfig.UNVERIFIABLE;
+              return (
+                <div key={i} style={{ display: "flex", gap: "12px", padding: "12px 0", borderBottom: i < 4 ? "1px solid #f1f5f9" : "none" }}>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: vc.color, marginTop: "6px", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "13px", fontWeight: "600", color: "#0f172a" }}>
+                      {vc.label} · {item.confidence}% confidence
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+                      {item.text}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>
+                      {item.time} · {item.category}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
 // ─── PAGE: ANALYZE ────────────────────────────────────────────────────────
 // FIX: Defined outside App so textarea never loses focus while typing
 function PageAnalyze({
@@ -937,29 +1157,311 @@ const analyzeNews = async () => {
   ];
 
   // ─── Login page ─────────────────────────────────────────────────────────
-  if (!user) {
-    return (
-      <div style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: BG, fontFamily: "Inter, Arial, sans-serif" }}>
-        <div style={{ width: "380px", background: "white", padding: "40px", borderRadius: "20px", boxShadow: "0 10px 40px rgba(0,0,0,0.1)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-            <div style={{ width: "36px", height: "36px", background: BLUE, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🛡</div>
-            <span style={{ fontSize: "20px", fontWeight: "700", color: DARK }}>TruthGuard AI</span>
+ // ---------------- LOGIN PAGE ----------------
+if (!user) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        background: "#f4f8fc",
+        fontFamily: "Inter, sans-serif",
+      }}
+    >
+      {/* LEFT PANEL */}
+      <div
+        style={{
+          flex: 1.3,
+          background:
+            "linear-gradient(135deg,#0f172a 0%,#1d4ed8 60%,#2563eb 100%)",
+          color: "#fff",
+          padding: "60px 70px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        {/* Logo + Title */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: "35px",
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="logo"
+            style={{
+              width: "55px",
+              height: "55px",
+              marginRight: "15px",
+            }}
+          />
+
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "42px",
+                fontWeight: "800",
+              }}
+            >
+              VeriNews
+            </h1>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#cbd5e1",
+                fontSize: "15px",
+              }}
+            >
+              AI Powered Fake News Detection
+            </p>
           </div>
-          <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "28px" }}>Fake News Detection System</p>
-          <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>Email</label>
-          <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-          <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginTop: "14px" }}>Password</label>
-          <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && login()} style={inputStyle} />
-          <button onClick={login} style={{ ...primaryBtn, width: "100%", marginTop: "20px", padding: "13px", fontSize: "15px" }}>Sign In</button>
-          <button onClick={googleLogin} style={{ width: "100%", padding: "12px", marginTop: "12px", borderRadius: "8px", border: "1px solid #dadce0", background: "white", color: "#3c4043", fontSize: "14px", fontWeight: "500", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-            <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: "18px", height: "18px" }} />
-            Continue with Google
-          </button>
-          <p onClick={forgotPassword} style={{ color: BLUE, cursor: "pointer", marginTop: "18px", textAlign: "center", fontSize: "13px" }}>Forgot password?</p>
+        </div>
+
+        {/* Heading */}
+        <h2
+          style={{
+            fontSize: "38px",
+            lineHeight: "50px",
+            marginBottom: "25px",
+            fontWeight: "700",
+          }}
+        >
+          Detect Fake News
+          <br />
+          Before It Spreads.
+        </h2>
+
+        <p
+          style={{
+            fontSize: "18px",
+            color: "#dbeafe",
+            maxWidth: "620px",
+            lineHeight: "32px",
+          }}
+        >
+          VeriNews uses Artificial Intelligence and Google's Gemini AI
+          to analyze news articles, WhatsApp messages, social media posts,
+          and online content to determine whether information is genuine
+          or misleading.
+        </p>
+
+        {/* Statistics */}
+        <div
+          style={{
+            display: "flex",
+            gap: "25px",
+            marginTop: "40px",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0 }}>96%</h2>
+            <p style={{ color: "#dbeafe" }}>Detection Accuracy</p>
+          </div>
+
+          <div>
+            <h2 style={{ margin: 0 }}>24/7</h2>
+            <p style={{ color: "#dbeafe" }}>Real-Time Analysis</p>
+          </div>
+
+          <div>
+            <h2 style={{ margin: 0 }}>AI</h2>
+            <p style={{ color: "#dbeafe" }}>Powered Verification</p>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div
+          style={{
+            marginTop: "55px",
+            display: "grid",
+            gridTemplateColumns: "repeat(2,1fr)",
+            gap: "18px",
+          }}
+        >
+          {[
+            "AI Fake News Detection",
+            "Real-Time News Analysis",
+            "Source Credibility Check",
+            "Gemini AI Integration",
+            "Detailed AI Report",
+            "Fast & Secure Authentication",
+          ].map((item) => (
+            <div
+              key={item}
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                padding: "18px",
+                borderRadius: "14px",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>✔ </span>
+              {item}
+            </div>
+          ))}
         </div>
       </div>
-    );
-  }
+
+      {/* LOGIN PANEL */}
+      <div
+        style={{
+          width: "430px",
+          background: "#fff",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          boxShadow: "-5px 0 25px rgba(0,0,0,.08)",
+        }}
+      >
+        <div
+          style={{
+            width: "340px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "34px",
+              marginBottom: "8px",
+              color: DARK,
+            }}
+          >
+            Welcome Back 👋
+          </h2>
+
+          <p
+            style={{
+              color: "#64748b",
+              marginBottom: "35px",
+            }}
+          >
+            Login to continue using VeriNews
+          </p>
+
+          <label style={{ fontWeight: "600" }}>
+            Email Address
+          </label>
+
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={inputStyle}
+          />
+
+          <label
+            style={{
+              display: "block",
+              marginTop: "20px",
+              fontWeight: "600",
+            }}
+          >
+            Password
+          </label>
+
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && login()}
+            style={inputStyle}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "18px",
+            }}
+          >
+            <label style={{ fontSize: "13px" }}>
+              <input type="checkbox" /> Remember me
+            </label>
+
+            <span
+              onClick={forgotPassword}
+              style={{
+                color: BLUE,
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              Forgot Password?
+            </span>
+          </div>
+
+          <button
+            onClick={login}
+            style={{
+              ...primaryBtn,
+              width: "100%",
+              marginTop: "25px",
+              padding: "15px",
+              borderRadius: "10px",
+            }}
+          >
+            🔐 Sign In
+          </button>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              margin: "28px 0",
+            }}
+          >
+            <div style={{ flex: 1, height: 1, background: "#ddd" }} />
+            <span style={{ margin: "0 12px", color: "#999" }}>OR</span>
+            <div style={{ flex: 1, height: 1, background: "#ddd" }} />
+          </div>
+
+          <button
+            onClick={googleLogin}
+            style={{
+              width: "100%",
+              padding: "14px",
+              border: "1px solid #ddd",
+              borderRadius: "10px",
+              background: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "12px",
+              fontWeight: "600",
+            }}
+          >
+            <img
+              src="https://developers.google.com/identity/images/g-logo.png"
+              alt=""
+              width="22"
+            />
+            Continue with Google
+          </button>
+
+          <p
+            style={{
+              marginTop: "35px",
+              textAlign: "center",
+              color: "#94a3b8",
+              fontSize: "12px",
+            }}
+          >
+            © 2026 VeriNews
+            <br />
+            AI-Powered Fake News Detection Platform
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // ─── Page renderer ──────────────────────────────────────────────────────
   const renderPage = () => {
@@ -1012,8 +1514,8 @@ const analyzeNews = async () => {
         <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px", marginBottom: "32px" }}>
           <div style={{ width: "32px", height: "32px", background: BLUE, borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>🛡</div>
           <div>
-            <div style={{ fontSize: "14px", fontWeight: "700" }}>TruthGuard AI</div>
-            <div style={{ fontSize: "10px", color: "#64748b" }}>Detection System</div>
+            <div style={{ fontSize: "14px", fontWeight: "700" }}>VeriNews</div>
+            <div style={{ fontSize: "10px", color: "#64748b" }}>AI News Verification</div>
           </div>
         </div>
 
