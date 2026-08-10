@@ -1,0 +1,209 @@
+/* ---------------- GLOBAL ---------------- */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
+
+body{
+  background:linear-gradient(180deg,#08111f,#0f172a,#132238);
+  color:white;
+}
+
+/* ---------------- APP ---------------- */
+
+.App{
+  min-height:100vh;
+  background:transparent;
+}
+
+/* ---------------- HERO ---------------- */
+
+.hero{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+padding:50px;
+
+margin:30px;
+
+border-radius:25px;
+
+background:linear-gradient(
+135deg,
+#0f4c81,
+#2563eb,
+#38bdf8
+);
+
+box-shadow:0 15px 35px rgba(0,0,0,.35);
+
+}
+
+.hero-left{
+
+max-width:650px;
+
+}
+
+.hero-left h1{
+
+font-size:48px;
+
+margin-bottom:15px;
+
+font-weight:700;
+
+}
+
+.hero-left p{
+
+font-size:18px;
+
+opacity:.9;
+
+margin-bottom:25px;
+
+line-height:1.6;
+
+}
+
+.hero-buttons{
+
+display:flex;
+gap:15px;
+
+}
+
+.primary-btn{
+
+background:white;
+color:#2563eb;
+
+padding:14px 30px;
+
+border:none;
+
+border-radius:12px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+.secondary-btn{
+
+background:transparent;
+
+border:2px solid white;
+
+color:white;
+
+padding:14px 30px;
+
+border-radius:12px;
+
+cursor:pointer;
+
+}
+
+.hero-card{
+
+background:white;
+
+color:#2563eb;
+
+padding:35px;
+
+width:250px;
+
+border-radius:20px;
+
+text-align:center;
+
+box-shadow:0 15px 30px rgba(0,0,0,.2);
+
+}
+
+.hero-card h1{
+
+font-size:55px;
+
+margin:10px 0;
+
+}
+
+/* ---------------- DASHBOARD CARDS ---------------- */
+
+.card{
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.12);
+
+border-radius:20px;
+
+padding:25px;
+
+color:white;
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-8px);
+
+box-shadow:0 15px 30px rgba(37,99,235,.35);
+
+}
+
+/* ---------------- NEWS CARD ---------------- */
+
+.news-card{
+
+background:#12223c;
+
+padding:20px;
+
+border-radius:18px;
+
+margin-bottom:18px;
+
+transition:.3s;
+
+}
+
+.news-card:hover{
+
+background:#193153;
+
+transform:translateY(-5px);
+
+}
+
+/* ---------------- BUTTON ---------------- */
+
+button{
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+button:hover{
+
+opacity:.9;
+
+transform:scale(1.03);
+
+}
